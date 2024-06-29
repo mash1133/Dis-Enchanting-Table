@@ -30,7 +30,8 @@
         "fabricloader": ">=0.14",
         "fabric": "*",
         "minecraft": "1.20",
-        "java": ">=17"
+        "java": ">=17",
+        "monolib": ">=1.3.0"
     },
     "suggests": {
         "another-mod": "*"
