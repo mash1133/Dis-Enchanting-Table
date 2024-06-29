@@ -1,6 +1,6 @@
 {
     "schemaVersion": 1,
-    "id": "mod_id",
+    "id": "disenchanting_table",
     "version": "${version}",
     "name": "${mod_name}",
     "description": "${description}",
@@ -16,7 +16,10 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "com.cursee.examplemod.ExampleMod"
+            "com.cursee.disenchanting_table.DisenchantingTableFabric"
+        ],
+        "client": [
+            "com.cursee.disenchanting_table.DisenchantingTableFabricClient"
         ]
     },
     "mixins": [
