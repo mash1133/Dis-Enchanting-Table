@@ -17,6 +17,9 @@
     "entrypoints": {
         "main": [
             "com.cursee.disenchanting_table.DisenchantingTableFabric"
+        ],
+        "client": [
+            "com.cursee.disenchanting_table.DisenchantingTableFabricClient"
         ]
     },
     "mixins": [
