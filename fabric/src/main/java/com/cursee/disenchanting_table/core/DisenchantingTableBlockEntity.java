@@ -2,31 +2,33 @@ package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableFabric;
 import com.cursee.disenchanting_table.core.util.ImplementedInventory;
+import com.cursee.monolib.core.MonoLibConfiguration;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.system.windows.INPUT;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,13 +140,13 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
         if (this.hasProperInput() && this.outputSlotIsEmpty()) {
 
-            // System.out.println("progress " + this.progress);
+            // debug("progress " + this.progress);
 
             this.progress++;
             DisenchantingTableBlockEntity.setChanged(level, pos, state);
 
             if (this.progress >= this.maxProgress) {
-                this.craftItem(level, pos, state);
+                this.newCraftItem(level, pos, state);
                 this.progress = 0;
             }
         }
@@ -159,6 +161,11 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
         @Nullable ServerPlayer player = (ServerPlayer) level.getNearestPlayer(TargetingConditions.forNonCombat(), pos.getX(), pos.getY(), pos.getZ());
 
         if (player != null && player.getAbilities().instabuild) {
+
+            if (player.isCrouching() && level.getBlockEntity(pos) != null) {
+                level.addFreshEntity(new ItemEntity(level, pos.getX(), pos.getY(), pos.getZ(), ((DisenchantingTableBlockEntity) level.getBlockEntity(pos)).getItem(ITEM_INPUT_SLOT)));
+            }
+
             return true;
         }
 
@@ -168,6 +175,115 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
         }
 
         return false;
+    }
+
+    private void newCraftItem(Level level, BlockPos pos, BlockState state) {
+
+        // we can assume
+        // ~ slot 1 is an ItemStack with at least one enchantment -> hasProperInput()
+        // ~ slot 2 is an ItemStack of Items.BOOK with size >= 1 -> hasProperInput()
+        // ~ slot 3 is an empty ItemStack -> outputSlotIsEmpty()
+
+        // goals
+        // ~ remove all enchantments if the input item is not an enchanted book
+        // ~ remove one enchantment if the input item is an enchanted book with >= 2 enchantments
+
+        // gather slots and enchantments
+        ItemStack inputSlotItem = this.getItem(ITEM_INPUT_SLOT);
+
+        ItemEnchantments inputEnchantments = inputSlotItem.getComponents().get(DataComponents.STORED_ENCHANTMENTS);
+        ItemEnchantments outputEnchantments = ItemEnchantments.EMPTY;
+
+        if (inputEnchantments == null) {
+            inputEnchantments = inputSlotItem.getEnchantments(); // hacky fix if enchantments not found as data component
+        }
+
+        if (!inputEnchantments.isEmpty()) {
+
+            debug("found enchantments on item");
+
+            // ~ remove all enchantments if the input item is not an enchanted book
+            if (inputSlotItem.getItem() != Items.ENCHANTED_BOOK && EnchantmentHelper.hasAnyEnchantments(inputSlotItem)) {
+
+                debug("item is not enchanted book");
+
+                if (!takeExperienceFromNearestPlayer(level, pos)) {
+                    debug("no player found");
+                    return; // do nothing if no player with enough experience was found or no creative player
+                }
+
+                this.removeItem(BOOK_INPUT_SLOT, 1);
+                debug("removed provided vanilla book from slot");
+
+                // create a new enchanted book, and copy the input enchantments to it.
+                ItemStack returnedEnchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
+                EnchantmentHelper.setEnchantments(returnedEnchantedBook, inputEnchantments);
+
+                // set the input item's enchantments to be empty
+                EnchantmentHelper.setEnchantments(inputSlotItem, ItemEnchantments.EMPTY);
+
+                // return the removed enchantments and original item to the player
+                this.setItem(OUTPUT_SLOT, returnedEnchantedBook);
+                this.setItem(ITEM_INPUT_SLOT, inputSlotItem);
+
+            }
+
+            // ~ remove one enchantment if the input item is an enchanted book with >= 2 enchantments
+            else if (inputSlotItem.getItem() == Items.ENCHANTED_BOOK && inputEnchantments.size() >= 2) {
+
+                debug("item is enchanted book");
+
+                if (!takeExperienceFromNearestPlayer(level, pos)) {
+                    debug("no player found");
+                    return; // do nothing if no player with enough experience was found or no creative player
+                }
+
+                this.removeItem(BOOK_INPUT_SLOT, 1);
+                debug("removed provided vanilla book from slot");
+
+
+
+
+                // create variables to hold single enchantment details
+                Enchantment[] givenEnchantment = new Enchantment[1];
+                Integer[] givenLevel = new Integer[1];
+
+                // extract the last enchantment and level from the input enchantments
+                inputEnchantments.entrySet().forEach(enchantment -> {
+                    givenEnchantment[0] = enchantment.getKey().value();
+                    givenLevel[0] = enchantment.getIntValue();
+                });
+
+                debug("Extracted " + givenEnchantment[0].toString() + " with level " + givenLevel[0]);
+
+                // remove the extracted enchantment from the original enchantments
+                ItemEnchantments.Mutable mutableInputEnchantments = new ItemEnchantments.Mutable(inputEnchantments);
+//                mutableInputEnchantments.removeIf(Predicate.isEqual(Holder.direct(givenEnchantment[0])));
+                mutableInputEnchantments.set(Holder.direct(givenEnchantment[0]), 0);
+                inputEnchantments = mutableInputEnchantments.toImmutable();
+
+                // overwrite the original output enchantments via ItemEnchantments.Mutable
+                ItemEnchantments.Mutable mutableOutputEnchantments = new ItemEnchantments.Mutable(outputEnchantments);
+                mutableOutputEnchantments.set(Holder.direct(givenEnchantment[0]), givenLevel[0]);
+                outputEnchantments = mutableOutputEnchantments.toImmutable();
+
+
+
+
+                // create a new enchanted book, and copy the output enchantments to it.
+                ItemStack returnedEnchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
+                EnchantmentHelper.setEnchantments(returnedEnchantedBook, outputEnchantments);
+
+                // set the input item's enchantments to the original enchantments without the removed
+                EnchantmentHelper.setEnchantments(inputSlotItem, inputEnchantments);
+
+                // return the removed enchantments and original item to the player
+                this.setItem(OUTPUT_SLOT, returnedEnchantedBook);
+                this.setItem(ITEM_INPUT_SLOT, inputSlotItem);
+            }
+        } else {
+            debug("FOUND NO ENCHANTMENTS ON ITEM");
+        }
     }
 
     private void craftItem(Level level, BlockPos pos, BlockState state) {
@@ -183,7 +299,12 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
         ItemStack inputBlankBook = this.getItem(BOOK_INPUT_SLOT);
         ItemStack outputBook = this.getItem(OUTPUT_SLOT);
 
-        ItemEnchantments enchantmentsTEST = inputItem.getEnchantments();
+
+        ItemEnchantments test = inputItem.getComponents().get(DataComponents.STORED_ENCHANTMENTS);
+//        ItemEnchantments enchantmentsTEST = EnchantmentHelper.getEnchantmentsForCrafting(inputItem);
+        System.out.println("more than 1 enchant? " + (test.size() >= 2));
+
+
 
         if (inputItem.getItem() != Items.ENCHANTED_BOOK && EnchantmentHelper.hasAnyEnchantments(inputItem)) {
             // operating on regular item
@@ -240,7 +361,7 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
             }
 
         }
-        else if (inputItem.getItem() == Items.ENCHANTED_BOOK && enchantmentsTEST.size() >= 2) {
+        else if (inputItem.getItem() == Items.ENCHANTED_BOOK && test.size() >= 2) {
             // operating on enchanted book
             // take one enchantment off of enchanted book with 2 or more enchantments
             // todo: config to take last, random, or all but one
@@ -274,7 +395,8 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 //                    allLevelsFromBookInput.add(integer);
 //                });
 
-                inputItemEnchantmentsMapIMMUTABLE.entrySet().forEach(enchant -> {
+                test.entrySet().forEach(enchant -> {
+
                     allEnchantmentsFromBookInput.add(enchant.getKey().value());
                     allLevelsFromBookInput.add(enchant.getIntValue());
                 });
@@ -301,10 +423,10 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
                 // enchant our returned item with original enchantments - copied enchantment
 //                EnchantmentHelper.setEnchantments(inputItemEnchantmentsMap, returnedItem);
-                EnchantmentHelper.setEnchantments(returnedItem, inputItemEnchantmentsMap);
+                EnchantmentHelper.setEnchantments(returnedItem, inputItemEnchantmentsMap.toImmutable());
 
                 // remove current items in slots
-                this.removeItem(ITEM_INPUT_SLOT, 1);
+                // this.removeItem(ITEM_INPUT_SLOT, 1);
                 this.removeItem(BOOK_INPUT_SLOT, 1);
 
                 // return dis-enchanted item and book with all enchantments
@@ -372,5 +494,11 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
     private boolean outputSlotIsEmpty() {
         return this.getItem(OUTPUT_SLOT).isEmpty();
+    }
+
+    private static void debug(String message) {
+        if (DisenchantingTableBlock.debug) {
+            System.out.println(message);
+        }
     }
 }

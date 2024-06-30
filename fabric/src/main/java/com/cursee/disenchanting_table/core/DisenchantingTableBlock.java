@@ -1,6 +1,7 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableFabric;
+import com.cursee.monolib.core.MonoLibConfiguration;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -27,6 +28,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 public class DisenchantingTableBlock extends BaseEntityBlock implements EntityBlock {
+
+    public static final boolean debug = true;
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 //    public static final StreamCodec<? super RegistryFriendlyByteBuf,? extends Object> CODES = BlockPos.STREAM_CODEC;
@@ -118,6 +121,9 @@ public class DisenchantingTableBlock extends BaseEntityBlock implements EntityBl
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
+        if (debug) {
+            System.out.println("CREATED TICKER FOR DISENCHANTING TABLE");
+        }
         return createTickerHelper(type, DisenchantingTableFabric.DISENCHANTING_TABLE_BLOCK_ENTITY, (world1, pos, state1, blockEntity) -> blockEntity.tick(world1, pos, state1));
     }
 
