@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 public class DisenchantingTableBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
+
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(3, ItemStack.EMPTY);
 
     public static final int TOTAL_SLOTS = 3;
@@ -256,11 +257,18 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
                 debug("Extracted " + givenEnchantment[0].toString() + " with level " + givenLevel[0]);
 
+                ItemEnchantments.Mutable enchantsKeptOnInput = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+
+                inputEnchantments.entrySet().forEach(enchant -> {
+                    if (enchant.getKey().value() != givenEnchantment[0]) {
+                        enchantsKeptOnInput.set(enchant.getKey(), enchant.getIntValue());
+                    }
+                });
+
                 // remove the extracted enchantment from the original enchantments
-                ItemEnchantments.Mutable mutableInputEnchantments = new ItemEnchantments.Mutable(inputEnchantments);
+//                ItemEnchantments.Mutable mutableInputEnchantments = new ItemEnchantments.Mutable(inputEnchantments);
 //                mutableInputEnchantments.removeIf(Predicate.isEqual(Holder.direct(givenEnchantment[0])));
-                mutableInputEnchantments.set(Holder.direct(givenEnchantment[0]), 0);
-                inputEnchantments = mutableInputEnchantments.toImmutable();
+                inputEnchantments = enchantsKeptOnInput.toImmutable();
 
                 // overwrite the original output enchantments via ItemEnchantments.Mutable
                 ItemEnchantments.Mutable mutableOutputEnchantments = new ItemEnchantments.Mutable(outputEnchantments);
