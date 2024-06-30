@@ -20,6 +20,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.*;
@@ -259,9 +260,17 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
                 ItemEnchantments.Mutable enchantsKeptOnInput = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
 
+                Enchantment[] given2Enchantment = new Enchantment[1];
+                Integer[] given2Level = new Integer[1];
                 // ignore the extracted enchantment while copying the original enchantments
                 inputEnchantments.entrySet().forEach(enchant -> {
+
+
                     if (enchant.getKey().value() != givenEnchantment[0]) {
+
+                        given2Enchantment[0] = enchant.getKey().value();
+                        given2Level[0] = enchant.getIntValue();
+
                         enchantsKeptOnInput.set(enchant.getKey(), enchant.getIntValue());
                     }
                 });
@@ -286,10 +295,16 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
                 EnchantmentHelper.setEnchantments(returnedEnchantedBook, outputEnchantments);
 
                 // set the input item's enchantments to the original enchantments without the removed
-                EnchantmentHelper.setEnchantments(inputSlotItem, inputEnchantments);
+                if (inputEnchantments.size() > 1) {
+                    EnchantmentHelper.setEnchantments(inputSlotItem, inputEnchantments);
+                } else {
+                    inputSlotItem = EnchantedBookItem.createForEnchantment(new EnchantmentInstance(Holder.direct(given2Enchantment[0]), given2Level[0]));
+                }
 
                 // return the removed enchantments and original item to the player
-                this.setItem(OUTPUT_SLOT, returnedEnchantedBook);
+                this.setItem(OUTPUT_SLOT, EnchantedBookItem.createForEnchantment(new EnchantmentInstance(Holder.direct(givenEnchantment[0]), givenLevel[0])));
+
+
                 this.setItem(ITEM_INPUT_SLOT, inputSlotItem);
             }
         } else {
