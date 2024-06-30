@@ -16,7 +16,7 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "com.cursee.examplemod.ExampleMod"
+            "com.cursee.disenchanting_table.DisenchantingTableFabric"
         ]
     },
     "mixins": [
