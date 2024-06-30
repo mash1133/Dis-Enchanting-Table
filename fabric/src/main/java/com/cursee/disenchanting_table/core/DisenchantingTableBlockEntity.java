@@ -259,19 +259,19 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
                 ItemEnchantments.Mutable enchantsKeptOnInput = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
 
+                // ignore the extracted enchantment while copying the original enchantments
                 inputEnchantments.entrySet().forEach(enchant -> {
                     if (enchant.getKey().value() != givenEnchantment[0]) {
                         enchantsKeptOnInput.set(enchant.getKey(), enchant.getIntValue());
                     }
                 });
 
-                // remove the extracted enchantment from the original enchantments
 //                ItemEnchantments.Mutable mutableInputEnchantments = new ItemEnchantments.Mutable(inputEnchantments);
 //                mutableInputEnchantments.removeIf(Predicate.isEqual(Holder.direct(givenEnchantment[0])));
                 inputEnchantments = enchantsKeptOnInput.toImmutable();
 
 
-                
+
 
                 // overwrite the original output enchantments via ItemEnchantments.Mutable
                 ItemEnchantments.Mutable mutableOutputEnchantments = new ItemEnchantments.Mutable(outputEnchantments);
