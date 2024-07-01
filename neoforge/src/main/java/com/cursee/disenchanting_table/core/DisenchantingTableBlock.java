@@ -1,12 +1,14 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableNeoForge;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -24,7 +26,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.network.NetworkHooks;
+//import net.neoforged.neoforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class DisenchantingTableBlock extends BaseEntityBlock {
@@ -34,6 +36,12 @@ public class DisenchantingTableBlock extends BaseEntityBlock {
 
     public DisenchantingTableBlock(Properties properties) {
         super(properties);
+    }
+
+    public static final MapCodec<DisenchantingTableBlock> CODEC = simpleCodec(DisenchantingTableBlock::new);
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Override
@@ -62,7 +70,8 @@ public class DisenchantingTableBlock extends BaseEntityBlock {
         BlockEntity entity = level.getBlockEntity(pos);
 
         if(entity instanceof DisenchantingTableBlockEntity) {
-            NetworkHooks.openScreen((ServerPlayer) player, (DisenchantingTableBlockEntity) entity, pos);
+//            NetworkHooks.openScreen((ServerPlayer) player, (DisenchantingTableBlockEntity) entity, pos);
+            ((ServerPlayer) player).openMenu((MenuProvider) entity, pos);
         }
         else {
             throw new IllegalStateException("CONTAINER PROVIDER MISSING; HAS ANOTHER MOD MODIFIED ALL CONTAINERS?");

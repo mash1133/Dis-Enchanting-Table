@@ -1,6 +1,6 @@
 package com.cursee.disenchanting_table.core;
 
-import com.cursee.disenchanting_table.DisenchantingTableForge;
+import com.cursee.disenchanting_table.DisenchantingTableNeoForge;
 import com.cursee.disenchanting_table.core.util.InventoryDirectionEntry;
 import com.cursee.disenchanting_table.core.util.InventoryDirectionWrapper;
 import com.cursee.disenchanting_table.core.util.WrappedHandler;
@@ -29,11 +29,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+//import net.minecraftforge.common.capabilities.Capability;
+//import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//import net.minecraftforge.common.util.LazyOptional;
+//import net.minecraftforge.items.IItemHandler;
+//import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +55,7 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
     protected final ContainerData data;
 
     public DisenchantingTableBlockEntity(BlockPos pos, BlockState state) {
-        super(DisenchantingTableForge.DISENCHANTING_TABLE_BLOCK_ENTITY.get(), pos, state);
+        super(DisenchantingTableNeoForge.DISENCHANTING_TABLE_BLOCK_ENTITY.get(), pos, state);
 
         this.data = new ContainerData() {
             @Override
@@ -297,7 +299,7 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
 
     // ITEM STACK HANDLING
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(TOTAL_SLOTS) {
+    public final ItemStackHandler itemHandler = new ItemStackHandler(TOTAL_SLOTS) {
 
         @Override
         protected void onContentsChanged(int slot) {
@@ -323,17 +325,6 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
         }
     };
 
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    private final Map<Direction, LazyOptional<WrappedHandler>> directionWrappedHandlerMap =
-        new InventoryDirectionWrapper(itemHandler,
-            new InventoryDirectionEntry(Direction.NORTH, BOOK_INPUT_SLOT, true),
-            new InventoryDirectionEntry(Direction.EAST, BOOK_INPUT_SLOT, true),
-            new InventoryDirectionEntry(Direction.SOUTH, BOOK_INPUT_SLOT, true),
-            new InventoryDirectionEntry(Direction.WEST, BOOK_INPUT_SLOT, true),
-            new InventoryDirectionEntry(Direction.DOWN, BOOK_INPUT_SLOT, true),
-            new InventoryDirectionEntry(Direction.UP, BOOK_INPUT_SLOT, true)
-        ).directionsMap;
-
     private boolean canInsertAmountIntoOutputSlot(int count) {
         return this.itemHandler.getStackInSlot(OUTPUT_SLOT).getMaxStackSize() >= this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() + count;
     }
@@ -344,33 +335,6 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
 
     private boolean outputSlotIsEmpty() {
         return this.itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty();
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-
-        if(cap == ForgeCapabilities.ITEM_HANDLER) {
-            if(side == null) {
-                return lazyItemHandler.cast();
-            }
-
-            if(directionWrappedHandlerMap.containsKey(side)) {
-                Direction localDir = this.getBlockState().getValue(DisenchantingTableBlock.FACING);
-
-                if(side == Direction.DOWN ||side == Direction.UP) {
-                    return directionWrappedHandlerMap.get(side).cast();
-                }
-
-                return switch (localDir) {
-                    default -> directionWrappedHandlerMap.get(side.getOpposite()).cast();
-                    case EAST -> directionWrappedHandlerMap.get(side.getClockWise()).cast();
-                    case SOUTH -> directionWrappedHandlerMap.get(side).cast();
-                    case WEST -> directionWrappedHandlerMap.get(side.getCounterClockWise()).cast();
-                };
-            }
-        }
-
-        return super.getCapability(cap, side);
     }
 
     // END ITEM STACK HANDLING
@@ -416,13 +380,17 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
     @Override
     public void onLoad() {
         super.onLoad();
-        lazyItemHandler = LazyOptional.of(() -> itemHandler);
     }
 
+//    @Override
+//    public void invalidateCaps() {
+//        super.invalidateCaps();
+//        lazyItemHandler.invalidate();
+//    }
+
     @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyItemHandler.invalidate();
+    public void invalidateCapabilities() {
+        super.invalidateCapabilities();
     }
 
     @Override

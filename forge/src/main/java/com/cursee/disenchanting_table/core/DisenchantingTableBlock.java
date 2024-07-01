@@ -1,6 +1,7 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableForge;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,6 +35,12 @@ public class DisenchantingTableBlock extends BaseEntityBlock {
 
     public DisenchantingTableBlock(Properties properties) {
         super(properties);
+    }
+
+    public static final MapCodec<DisenchantingTableBlock> CODEC = simpleCodec(DisenchantingTableBlock::new);
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.cursee.disenchanting_table.core;
 
 //import com.cursee.disenchanting_table.DisenchantingTableForge;
 import com.cursee.disenchanting_table.DisenchantingTableNeoForge;
+import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -9,7 +10,8 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.neoforged.neoforge.common.capabilities.Capabilities;
+//import net.neoforged.neoforge.common.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.SlotItemHandler;
 //import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //import net.minecraftforge.items.SlotItemHandler;
@@ -39,7 +41,7 @@ public class DisenchantingTableMenu extends AbstractContainerMenu {
         this.addPlayerInventory(inventory);
         this.addPlayerHotbar(inventory);
 
-        this.entity.getCapability(Capabilities.ITEM_HANDLER).ifPresent(handler -> {
+        this.entity.getCapability(Capabilities.ItemHandler.BLOCK).ifPresent(handler -> {
             this.addSlot(new SlotItemHandler(handler, DisenchantingTableBlockEntity.ITEM_INPUT_SLOT, 27, 47));
             this.addSlot(new SlotItemHandler(handler, DisenchantingTableBlockEntity.BOOK_INPUT_SLOT, 76, 47));
             this.addSlot(new SlotItemHandler(handler, DisenchantingTableBlockEntity.OUTPUT_SLOT, 134, 47));
