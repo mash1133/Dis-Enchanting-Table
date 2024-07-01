@@ -1,8 +1,8 @@
 package com.cursee.disenchanting_table.core.util;
 
 import net.minecraft.core.Direction;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 import java.util.HashMap;
 import java.util.Map;

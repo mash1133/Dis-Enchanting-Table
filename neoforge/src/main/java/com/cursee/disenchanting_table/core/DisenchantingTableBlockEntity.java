@@ -1,6 +1,6 @@
 package com.cursee.disenchanting_table.core;
 
-import com.cursee.disenchanting_table.DisenchantingTableForge;
+import com.cursee.disenchanting_table.DisenchantingTableNeoForge;
 import com.cursee.disenchanting_table.core.util.InventoryDirectionEntry;
 import com.cursee.disenchanting_table.core.util.InventoryDirectionWrapper;
 import com.cursee.disenchanting_table.core.util.WrappedHandler;
@@ -29,11 +29,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+//import net.minecraftforge.common.capabilities.Capability;
+//import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//import net.minecraftforge.common.util.LazyOptional;
+//import net.minecraftforge.items.IItemHandler;
+//import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.common.capabilities.Capabilities;
+import net.neoforged.neoforge.common.capabilities.Capability;
+import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +58,7 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
     protected final ContainerData data;
 
     public DisenchantingTableBlockEntity(BlockPos pos, BlockState state) {
-        super(DisenchantingTableForge.DISENCHANTING_TABLE_BLOCK_ENTITY.get(), pos, state);
+        super(DisenchantingTableNeoForge.DISENCHANTING_TABLE_BLOCK_ENTITY.get(), pos, state);
 
         this.data = new ContainerData() {
             @Override
@@ -349,7 +354,7 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
 
-        if(cap == ForgeCapabilities.ITEM_HANDLER) {
+        if(cap == Capabilities.ITEM_HANDLER) {
             if(side == null) {
                 return lazyItemHandler.cast();
             }
