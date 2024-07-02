@@ -50,7 +50,7 @@ public class DisenchantingTableScreen extends AbstractContainerScreen<Disenchant
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        renderBackground(graphics, 0, 0, 0.0F);
+        renderBackground(graphics, 0, 0, 0.0f);
         super.render(graphics, mouseX, mouseY, delta);
         renderTooltip(graphics, mouseX, mouseY);
     }
@@ -68,7 +68,7 @@ public class DisenchantingTableScreen extends AbstractContainerScreen<Disenchant
                 int color = 0xFFFF6060; // red ARGB
                 Component component = Component.literal("Cost: 5 Levels");
 
-                if (player.experienceLevel >= this.menu.cost) {
+                if (player.experienceLevel >= 5) {
                     color = 0xFF60FF60; // green ARGB
                 }
 

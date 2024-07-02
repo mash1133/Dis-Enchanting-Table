@@ -35,23 +35,24 @@ public class DisenchantingTableNeoForge {
     public static final DeferredRegister<Item> ITEM = DeferredRegister.create(BuiltInRegistries.ITEM, Constants.MOD_ID);
     public static final DeferredRegister<MenuType<?>> MENU_TYPE = DeferredRegister.create(BuiltInRegistries.MENU, Constants.MOD_ID);
 
-    // Block
-    public static final DeferredHolder<Block, Block> DISENCHANTING_TABLE_BLOCK = registerBlockAndBlockItem("disenchanting_table", () -> new DisenchantingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE).noOcclusion()));
+    public static final DeferredHolder<Block, Block> DISENCHANTING_TABLE_BLOCK;
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DisenchantingTableBlockEntity>> DISENCHANTING_TABLE_BLOCK_ENTITY;
+    public static final DeferredHolder<MenuType<?>, MenuType<DisenchantingTableMenu>> DISENCHANTING_TABLE_MENU;
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> DISENCHANTING_TABLE_CREATIVE_MODE_TAB;
 
-    // BlockEntity
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<DisenchantingTableBlockEntity>> DISENCHANTING_TABLE_BLOCK_ENTITY = BLOCK_ENTITY.register("disenchanting_table_block_entity", () ->  BlockEntityType.Builder.of(DisenchantingTableBlockEntity::new, DISENCHANTING_TABLE_BLOCK.get()).build(null));
+    static {
+        DISENCHANTING_TABLE_BLOCK = registerBlockAndBlockItem("disenchanting_table", () -> new DisenchantingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE)));
+        DISENCHANTING_TABLE_BLOCK_ENTITY = BLOCK_ENTITY.register("disenchanting_table_block_entity", () ->  BlockEntityType.Builder.of(DisenchantingTableBlockEntity::new, DISENCHANTING_TABLE_BLOCK.get()).build(null));
+        DISENCHANTING_TABLE_MENU = registerMenuType(DisenchantingTableMenu::new, "disenchanting_table_menu");
 
-    // CreativeModeTab
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> DISENCHANTING_TABLE_CREATIVE_MODE_TAB =
-            CREATIVE_MODE_TAB.register("disenchanting_table_tab", () -> CreativeModeTab.builder()
-                    .icon(() -> new ItemStack(DISENCHANTING_TABLE_BLOCK.get()))
-                    .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
-                    .title(Component.translatable("itemGroup.disenchanting_table"))
-                    .displayItems((displayParameters, output) -> output.accept(DISENCHANTING_TABLE_BLOCK.get()))
-                    .build());
-
-    // MenuType
-    public static final DeferredHolder<MenuType<?>, MenuType<DisenchantingTableMenu>> DISENCHANTING_TABLE_MENU = registerMenuType(DisenchantingTableMenu::new, "disenchanting_table_menu");
+        DISENCHANTING_TABLE_CREATIVE_MODE_TAB = CREATIVE_MODE_TAB.register("disenchanting_table_tab", () ->
+                CreativeModeTab.builder()
+                        .icon(() -> new ItemStack(DISENCHANTING_TABLE_BLOCK.get()))
+                        .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
+                        .title(Component.translatable("itemGroup.disenchanting_table"))
+                        .displayItems((displayParameters, output) -> output.accept(DISENCHANTING_TABLE_BLOCK.get()))
+                        .build());
+    }
 
     public DisenchantingTableNeoForge(IEventBus bus) {
 
@@ -59,21 +60,25 @@ public class DisenchantingTableNeoForge {
 
         Sailing.register(Constants.MOD_NAME, Constants.MOD_ID, Constants.MOD_VERSION, Constants.MC_VERSION_RAW, Constants.PUBLISHER_AUTHOR, Constants.PRIMARY_CURSEFORGE_MODRINTH);
 
-//        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-
         DisenchantingTableNeoForge.registerAllDeferred(bus);
 
         bus.addListener(this::addCreative);
     }
 
+    private static void registerAllDeferred(IEventBus bus) {
+        DisenchantingTableNeoForge.BLOCK.register(bus);
+        DisenchantingTableNeoForge.BLOCK_ENTITY.register(bus);
+        DisenchantingTableNeoForge.CREATIVE_MODE_TAB.register(bus);
+        DisenchantingTableNeoForge.ITEM.register(bus);
+        DisenchantingTableNeoForge.MENU_TYPE.register(bus);
+    }
 
     @Mod.EventBusSubscriber(modid = Constants.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     public static class ClientModEvents
     {
         @SubscribeEvent
         public static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerBlockEntityRenderer(DISENCHANTING_TABLE_BLOCK_ENTITY.get(),
-                    DisenchantingTableEntityRenderer::new);
+            event.registerBlockEntityRenderer(DISENCHANTING_TABLE_BLOCK_ENTITY.get(), DisenchantingTableEntityRenderer::new);
         }
         @SubscribeEvent
         public static void onClientSetup(FMLClientSetupEvent event) {
@@ -89,14 +94,6 @@ public class DisenchantingTableNeoForge {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(DISENCHANTING_TABLE_BLOCK.get());
         }
-    }
-
-    private static void registerAllDeferred(IEventBus bus) {
-        BLOCK.register(bus);
-        BLOCK_ENTITY.register(bus);
-        CREATIVE_MODE_TAB.register(bus);
-        ITEM.register(bus);
-        MENU_TYPE.register(bus);
     }
 
     private static <T extends Block> DeferredHolder<Block, T> registerBlockAndBlockItem(String name, Supplier<T> block) {
