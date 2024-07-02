@@ -175,7 +175,7 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
         // ~ remove one enchantment if the input item is an enchanted book with >= 2 enchantments
 
         // current issues
-        // !! splitting enchantments from an enchanted book corrupts the current world data
+        // !! [FIXED?] splitting enchantments from an enchanted book corrupts the current world data
 
         ItemStack input = this.getItem(ITEM_INPUT_SLOT);
 
