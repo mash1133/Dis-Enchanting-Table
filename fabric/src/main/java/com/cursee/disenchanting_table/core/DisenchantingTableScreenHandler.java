@@ -1,7 +1,6 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableFabric;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
@@ -18,10 +17,10 @@ public class DisenchantingTableScreenHandler extends AbstractContainerMenu {
     private final ContainerData propertyDelegate;
     public final DisenchantingTableBlockEntity blockEntity;
 
-//    public DisenchantingTableScreenHandler(int syncId, Inventory inventory, FriendlyByteBuf buf) {
-//        this(syncId, inventory, inventory.player.level().getBlockEntity(buf.readBlockPos()),
-//                new SimpleContainerData(2));
-//    }
+    public DisenchantingTableScreenHandler(int syncId, Inventory inventory, FriendlyByteBuf buf) {
+        this(syncId, inventory, inventory.player.level().getBlockEntity(buf.readBlockPos()),
+                new SimpleContainerData(2));
+    }
 
     public DisenchantingTableScreenHandler(int syncId, Inventory playerInventory,
                                       BlockEntity blockEntity, ContainerData arrayPropertyDelegate) {
@@ -42,7 +41,7 @@ public class DisenchantingTableScreenHandler extends AbstractContainerMenu {
     }
 
     public DisenchantingTableScreenHandler(int i, Inventory inventory, Object o) {
-        this(i, inventory, inventory.player.level().getBlockEntity((BlockPos) o), new SimpleContainerData(2));
+        this.inventory = inventory;
     }
 
     @Override

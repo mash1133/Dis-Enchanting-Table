@@ -1,6 +1,5 @@
 package com.cursee.disenchanting_table.core;
 
-
 import com.cursee.disenchanting_table.Constants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -10,15 +9,21 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
-public class DisenchantingTableScreen extends AbstractContainerScreen<DisenchantingTableScreenHandler> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Constants.MOD_ID, "textures/gui/container/disenchanting.png");
+public class DisenchantingTableScreen extends AbstractContainerScreen<DisenchantingTableMenu> {
 
-    private @Nullable Player player = null;
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Constants.MOD_ID,"textures/gui/container/disenchanting.png");
 
-    public DisenchantingTableScreen(DisenchantingTableScreenHandler handler, Inventory inventory, Component title) {
-        super(handler, inventory, title);
+    private final @NotNull Player player;
+    private final @NotNull DisenchantingTableMenu menu;
+
+    private int playerExperienceLevels;
+
+    public DisenchantingTableScreen(@NotNull DisenchantingTableMenu menu, Inventory inventory, Component title) {
+        super(menu, inventory, title);
+
+        this.menu = menu;
         this.player = inventory.player;
     }
 
@@ -56,14 +61,14 @@ public class DisenchantingTableScreen extends AbstractContainerScreen<Disenchant
 
         if (this.minecraft != null && this.minecraft.player != null) {
 
-            // Player player = this.minecraft.player;
+            Player player = this.minecraft.player;
 
-            if (!this.player.getAbilities().instabuild) {
+            if (!player.getAbilities().instabuild) {
 
                 int color = 0xFFFF6060; // red ARGB
                 Component component = Component.literal("Cost: 5 Levels");
 
-                if (this.player.experienceLevel >= 5) {
+                if (player.experienceLevel >= this.menu.cost) {
                     color = 0xFF60FF60; // green ARGB
                 }
 

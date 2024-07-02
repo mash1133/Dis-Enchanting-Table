@@ -1,15 +1,21 @@
 package com.cursee.disenchanting_table.core;
 
-import com.cursee.disenchanting_table.DisenchantingTableFabric;
-import com.cursee.disenchanting_table.core.util.ImplementedInventory;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import com.cursee.disenchanting_table.DisenchantingTableForge;
+import com.cursee.disenchanting_table.core.util.InventoryDirectionEntry;
+import com.cursee.disenchanting_table.core.util.InventoryDirectionWrapper;
+import com.cursee.disenchanting_table.core.util.WrappedHandler;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.NonNullList;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.Containers;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -20,8 +26,14 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,26 +41,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class DisenchantingTableBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
-    private final NonNullList<ItemStack> inventory = NonNullList.withSize(3, ItemStack.EMPTY);
+public class DisenchantingTableBlockEntity extends BlockEntity implements MenuProvider {
 
-    public static final int TOTAL_SLOTS = 3;
-    private static final int ITEM_INPUT_SLOT = 0;
-    private static final int BOOK_INPUT_SLOT = 1;
-    private static final int OUTPUT_SLOT = 2;
+    protected static final int TOTAL_SLOTS = 3;
+    protected static final int ITEM_INPUT_SLOT = 0;
+    protected static final int BOOK_INPUT_SLOT = 1;
+    protected static final int OUTPUT_SLOT = 2;
 
-    protected final ContainerData propertyDelegate;
     private int progress = 0;
     private int maxProgress = 10;
-
-    public @Nullable Player player = null;
+    protected final ContainerData data;
 
     public DisenchantingTableBlockEntity(BlockPos pos, BlockState state) {
-        super(DisenchantingTableFabric.DISENCHANTING_TABLE_BLOCK_ENTITY, pos, state);
-        this.propertyDelegate = new ContainerData() {
+        super(DisenchantingTableForge.DISENCHANTING_TABLE_BLOCK_ENTITY.get(), pos, state);
+
+        this.data = new ContainerData() {
             @Override
-            public int get(int index) {
-                return switch (index) {
+            public int get(int pIndex) {
+                return switch (pIndex) {
                     case 0 -> DisenchantingTableBlockEntity.this.progress;
                     case 1 -> DisenchantingTableBlockEntity.this.maxProgress;
                     default -> 0;
@@ -56,10 +66,10 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
             }
 
             @Override
-            public void set(int index, int value) {
-                switch (index) {
-                    case 0: DisenchantingTableBlockEntity.this.progress = value;
-                    case 1: DisenchantingTableBlockEntity.this.maxProgress = value;
+            public void set(int pIndex, int pValue) {
+                switch (pIndex) {
+                    case 0 -> DisenchantingTableBlockEntity.this.progress = pValue;
+                    case 1 -> DisenchantingTableBlockEntity.this.maxProgress = pValue;
                 }
             }
 
@@ -70,42 +80,6 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
         };
     }
 
-    @Override
-    public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
-        buf.writeBlockPos(this.worldPosition);
-    }
-
-    @Override
-    public @NotNull Component getDisplayName() {
-        return Component.literal("");
-    }
-
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
-        this.player = player;
-        return new DisenchantingTableScreenHandler(syncId, playerInventory, this, propertyDelegate);
-    }
-
-    @Override
-    public NonNullList<ItemStack> getItems() {
-        return this.inventory;
-    }
-
-    @Override
-    protected void saveAdditional(CompoundTag nbt) {
-        super.saveAdditional(nbt);
-        ContainerHelper.saveAllItems(nbt, inventory);
-        nbt.putInt("disenchanting_table.progress", progress);
-    }
-
-    @Override
-    public void load(CompoundTag nbt) {
-        ContainerHelper.loadAllItems(nbt, inventory);
-        progress = nbt.getInt("disenchanting_table.progress");
-        super.load(nbt);
-    }
-    
     public void tick(Level level, BlockPos pos, BlockState state) {
 
         if (level == null || level.isClientSide()) {
@@ -154,10 +128,9 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
         ItemStack returnedEnchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
 
         // gather input item stacks
-        ItemStack inputItem = this.getItem(ITEM_INPUT_SLOT);
-        ItemStack inputItemCopy = inputItem.copy();
-        ItemStack inputBlankBook = this.getItem(BOOK_INPUT_SLOT);
-        ItemStack outputBook = this.getItem(OUTPUT_SLOT);
+        ItemStack inputItem = this.itemHandler.getStackInSlot(ITEM_INPUT_SLOT);
+        ItemStack inputBlankBook = this.itemHandler.getStackInSlot(BOOK_INPUT_SLOT);
+        ItemStack outputBook = this.itemHandler.getStackInSlot(OUTPUT_SLOT);
 
         if (inputItem.getItem() != Items.ENCHANTED_BOOK && !EnchantmentHelper.getEnchantments(inputItem).isEmpty()) {
             // operating on regular item
@@ -191,20 +164,15 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
                 EnchantmentHelper.setEnchantments(inputEnchantmentMap, returnedEnchantedBook);
 
                 // override input enchantment map
-                EnchantmentHelper.setEnchantments(emptyEnchantmentMap, inputItemCopy);
+                EnchantmentHelper.setEnchantments(emptyEnchantmentMap, inputItem);
 
                 // remove current items in slots
-                this.removeItem(ITEM_INPUT_SLOT, 1);
-                this.removeItem(BOOK_INPUT_SLOT, 1);
+                this.itemHandler.extractItem(ITEM_INPUT_SLOT, 1, false);
+                this.itemHandler.extractItem(BOOK_INPUT_SLOT, 1, false);
 
                 // return dis-enchanted item and book with all enchantments
-                this.setItem(ITEM_INPUT_SLOT, inputItemCopy);
-
-//                if (this.player != null) {
-//                    this.player.sendSystemMessage(Component.literal(this.getItem(ITEM_INPUT_SLOT).getDisplayName().toString()));
-//                }
-
-                this.setItem(OUTPUT_SLOT, returnedEnchantedBook);
+                this.itemHandler.setStackInSlot(ITEM_INPUT_SLOT, inputItem);
+                this.itemHandler.setStackInSlot(OUTPUT_SLOT, returnedEnchantedBook);
             }
 
         }
@@ -220,8 +188,6 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 
             if (true) {
                 // take first
-
-                // System.out.println("taking first enchantment from book");
 
                 // original implementation
 
@@ -259,16 +225,19 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
                 EnchantmentHelper.setEnchantments(inputItemEnchantmentsMap, returnedItem);
 
                 // remove current items in slots
-                this.removeItem(ITEM_INPUT_SLOT, 1);
-                this.removeItem(BOOK_INPUT_SLOT, 1);
+                this.itemHandler.extractItem(ITEM_INPUT_SLOT, 1, false);
+                this.itemHandler.extractItem(BOOK_INPUT_SLOT, 1, false);
 
                 // return dis-enchanted item and book with all enchantments
-                this.setItem(ITEM_INPUT_SLOT, returnedItem);
-                this.setItem(OUTPUT_SLOT, returnedEnchantedBook);
+                this.itemHandler.setStackInSlot(ITEM_INPUT_SLOT, returnedItem);
+                this.itemHandler.setStackInSlot(OUTPUT_SLOT, returnedEnchantedBook);
 
                 // original implementation end
 
+                // System.out.println("taking first enchantment from book");
+
 //                // gather all enchantments from input item as a map
+//                Map<Enchantment, Integer> emptyMap = EnchantmentHelper.getEnchantments(returnedEnchantedBook);
 //                Map<Enchantment, Integer> inputItemEnchantmentsMap = EnchantmentHelper.getEnchantments(inputItem);
 //
 //                // initialize arrays to hold copies of the enchantment keys and levels
@@ -291,21 +260,22 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
 //                EnchantmentHelper.setEnchantments(returnedEnchantmentMap, returnedEnchantedBook);
 //
 //                // remove enchantment we copied
-//                inputItemEnchantmentsMap.remove(allEnchantmentsFromBookInput.get(0));
+//                inputItemEnchantmentsMap.remove((Enchantment) allEnchantmentsFromBookInput.get(0), (Integer) allLevelsFromBookInput.get(0));
 //
 //                // define our return item with same name as input item
 //                // returnedItem = new ItemStack(inputItem.getItem()).setHoverName(inputItem.getHoverName());
 //
 //                // enchant our returned item with original enchantments, minus the copied enchantment
+//                EnchantmentHelper.setEnchantments(emptyMap, inputItem);
 //                EnchantmentHelper.setEnchantments(inputItemEnchantmentsMap, inputItem);
 //
 //                // remove current items in slots
-//                this.removeItem(ITEM_INPUT_SLOT, 1);
-//                this.removeItem(BOOK_INPUT_SLOT, 1);
+//                this.itemHandler.extractItem(ITEM_INPUT_SLOT, 1, false);
+//                this.itemHandler.extractItem(BOOK_INPUT_SLOT, 1, false);
 //
 //                // return dis-enchanted item and book with all enchantments
-//                this.setItem(ITEM_INPUT_SLOT, inputItem);
-//                this.setItem(OUTPUT_SLOT, returnedEnchantedBook);
+//                this.itemHandler.setStackInSlot(ITEM_INPUT_SLOT, inputItem);
+//                this.itemHandler.setStackInSlot(OUTPUT_SLOT, returnedEnchantedBook);
 
 
             }
@@ -322,10 +292,154 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements Extend
     }
 
     private boolean hasProperInput() {
-        return !EnchantmentHelper.getEnchantments(this.getItem(ITEM_INPUT_SLOT)).isEmpty() && this.getItem(BOOK_INPUT_SLOT).getItem() == Items.BOOK;
+        return !EnchantmentHelper.getEnchantments(this.itemHandler.getStackInSlot(ITEM_INPUT_SLOT)).isEmpty() && this.itemHandler.getStackInSlot(BOOK_INPUT_SLOT).getItem() == Items.BOOK;
+    }
+
+    // ITEM STACK HANDLING
+
+    private final ItemStackHandler itemHandler = new ItemStackHandler(TOTAL_SLOTS) {
+
+        @Override
+        protected void onContentsChanged(int slot) {
+            DisenchantingTableBlockEntity.super.setChanged();
+            if(level != null && !level.isClientSide()) {
+                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL);
+            }
+        }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            /*
+             * 0 -> expected input for an enchanted item (tool/armor/book/etc.)
+             * 1 -> expected input for a regular book
+             * 2 -> output for enchanted book
+             */
+            return switch (slot) {
+                case 0 -> !EnchantmentHelper.getEnchantments(stack).isEmpty(); // only insert if enchanted
+                case 1 -> stack.getItem() == Items.BOOK; // only insert regular books
+                case 2 -> false; // never insertable
+                default -> super.isItemValid(slot, stack);
+            };
+        }
+    };
+
+    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    private final Map<Direction, LazyOptional<WrappedHandler>> directionWrappedHandlerMap =
+        new InventoryDirectionWrapper(itemHandler,
+            new InventoryDirectionEntry(Direction.NORTH, BOOK_INPUT_SLOT, true),
+            new InventoryDirectionEntry(Direction.EAST, BOOK_INPUT_SLOT, true),
+            new InventoryDirectionEntry(Direction.SOUTH, BOOK_INPUT_SLOT, true),
+            new InventoryDirectionEntry(Direction.WEST, BOOK_INPUT_SLOT, true),
+            new InventoryDirectionEntry(Direction.DOWN, BOOK_INPUT_SLOT, true),
+            new InventoryDirectionEntry(Direction.UP, BOOK_INPUT_SLOT, true)
+        ).directionsMap;
+
+    private boolean canInsertAmountIntoOutputSlot(int count) {
+        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).getMaxStackSize() >= this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() + count;
+    }
+
+    private boolean isOutputSlotEmptyOrReceivable() {
+        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty() || this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() < this.itemHandler.getStackInSlot(OUTPUT_SLOT).getMaxStackSize();
     }
 
     private boolean outputSlotIsEmpty() {
-        return this.getItem(OUTPUT_SLOT).isEmpty();
+        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty();
+    }
+
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+
+        if(cap == ForgeCapabilities.ITEM_HANDLER) {
+            if(side == null) {
+                return lazyItemHandler.cast();
+            }
+
+            if(directionWrappedHandlerMap.containsKey(side)) {
+                Direction localDir = this.getBlockState().getValue(DisenchantingTableBlock.FACING);
+
+                if(side == Direction.DOWN ||side == Direction.UP) {
+                    return directionWrappedHandlerMap.get(side).cast();
+                }
+
+                return switch (localDir) {
+                    default -> directionWrappedHandlerMap.get(side.getOpposite()).cast();
+                    case EAST -> directionWrappedHandlerMap.get(side.getClockWise()).cast();
+                    case SOUTH -> directionWrappedHandlerMap.get(side).cast();
+                    case WEST -> directionWrappedHandlerMap.get(side.getCounterClockWise()).cast();
+                };
+            }
+        }
+
+        return super.getCapability(cap, side);
+    }
+
+    // END ITEM STACK HANDLING
+
+    public void drops() {
+        if (this.level != null) {
+
+            SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+
+            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                inventory.setItem(i, itemHandler.getStackInSlot(i));
+            }
+
+            Containers.dropContents(this.level, this.worldPosition, inventory);
+        }
+    }
+
+    @Override
+    public @NotNull Component getDisplayName() {
+        return Component.literal("");
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int containerID, @NotNull Inventory inventory, @NotNull Player player) {
+        return new DisenchantingTableMenu(containerID, inventory, this, this.data);
+    }
+
+    @Override
+    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public @NotNull CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        lazyItemHandler = LazyOptional.of(() -> itemHandler);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        lazyItemHandler.invalidate();
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag pTag) {
+        pTag.put("inventory", itemHandler.serializeNBT());
+        pTag.putInt("disenchanting_table.progress", progress);
+        pTag.putInt("disenchanting_table.max_progress", maxProgress);
+
+        super.saveAdditional(pTag);
+    }
+
+    @Override
+    public void load(CompoundTag pTag) {
+        super.load(pTag);
+        itemHandler.deserializeNBT(pTag.getCompound("inventory"));
+        progress = pTag.getInt("disenchanting_table.progress");
+        maxProgress = pTag.getInt("disenchanting_table.max_progress");
+
     }
 }

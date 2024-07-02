@@ -5,12 +5,11 @@ import com.cursee.disenchanting_table.core.DisenchantingTableBlockEntity;
 import com.cursee.disenchanting_table.core.DisenchantingTableScreenHandler;
 import com.cursee.monolib.core.sailing.Sailing;
 import net.fabricmc.api.ModInitializer;
-//import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -36,7 +35,7 @@ public class DisenchantingTableFabric implements ModInitializer {
 
     public static final MenuType<DisenchantingTableScreenHandler> DISENCHANTING_TABLE_SCREEN_HANDLER =
             Registry.register(BuiltInRegistries.MENU, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "disenchanting_table_screen"),
-                    new ExtendedScreenHandlerType<>(DisenchantingTableScreenHandler::new, BlockPos.STREAM_CODEC));
+                    new ExtendedScreenHandlerType<>(DisenchantingTableScreenHandler::new));
 
     public static final CreativeModeTab DISENCHANTING_TABLE_TAB = Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB,
             ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "disenchanting_table"),
