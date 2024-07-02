@@ -1,8 +1,8 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableFabric;
+import com.cursee.disenchanting_table.core.DisenchantingTableBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -24,7 +24,7 @@ public class DisenchantingTableScreenHandler extends AbstractContainerMenu {
 //    }
 
     public DisenchantingTableScreenHandler(int syncId, Inventory playerInventory,
-                                      BlockEntity blockEntity, ContainerData arrayPropertyDelegate) {
+                                           BlockEntity blockEntity, ContainerData arrayPropertyDelegate) {
         super(DisenchantingTableFabric.DISENCHANTING_TABLE_SCREEN_HANDLER, syncId);
         checkContainerSize(((Container) blockEntity), DisenchantingTableBlockEntity.TOTAL_SLOTS);
         this.inventory = (Container)blockEntity;

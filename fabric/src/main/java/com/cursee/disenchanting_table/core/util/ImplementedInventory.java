@@ -2,7 +2,6 @@ package com.cursee.disenchanting_table.core.util;
 
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.WorldlyContainer;
@@ -12,16 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-/**
- * A simple {@code SidedInventory} implementation with only default methods + an item list getter.
- *
- * <h2>Reading and writing to tags</h2>
- * Use {@link ContainerHelper#saveAllItems(CompoundTag, NonNullList)} and {@link ContainerHelper#loadAllItems(CompoundTag, NonNullList)}
- * on {@linkplain #getItems() the item list}.
- *
- * License: <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</a>
- * @author Juuz
- */
 @FunctionalInterface
 public interface ImplementedInventory extends WorldlyContainer {
     /**

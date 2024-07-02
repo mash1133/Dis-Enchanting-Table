@@ -1,25 +1,23 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.DisenchantingTableFabric;
-import com.cursee.monolib.core.MonoLibConfiguration;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -29,40 +27,66 @@ import org.jetbrains.annotations.Nullable;
 
 public class DisenchantingTableBlock extends BaseEntityBlock implements EntityBlock {
 
-    public static final boolean debug = true;
-
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-//    public static final StreamCodec<? super RegistryFriendlyByteBuf,? extends Object> CODES = BlockPos.STREAM_CODEC;
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 12, 16);
 
-    public DisenchantingTableBlock(Properties settings) {
-        super(settings);
+    public DisenchantingTableBlock(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new DisenchantingTableBlockEntity(pos, state);
+    }
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockState, BlockEntityType<T> type) {
+        return createTickerHelper(type, DisenchantingTableFabric.DISENCHANTING_TABLE_BLOCK_ENTITY, (world1, pos, state1, blockEntity) -> blockEntity.tick(world1, pos, state1));
+    }
+
+    private void doServerInteraction(Level level, BlockPos pos, Player player) {
+
+        MenuProvider screenHandlerFactory = ((DisenchantingTableBlockEntity) level.getBlockEntity(pos));
+
+        if (screenHandlerFactory != null) {
+            player.openMenu(screenHandlerFactory);
+        }
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult blockHitResult) {
+
+        if (!level.isClientSide()) {
+            this.doServerInteraction(level, pos, player);
+        }
+
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack itemStack, BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
+
+        if (!level.isClientSide()) {
+            this.doServerInteraction(level, pos, player);
+        }
+
+        return ItemInteractionResult.SUCCESS;
     }
 
     public static final MapCodec<DisenchantingTableBlock> CODEC = simpleCodec(DisenchantingTableBlock::new);
+
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+    protected VoxelShape getShape(BlockState blockState, BlockGetter blockGetter, BlockPos blockPos, CollisionContext collisionContext) {
         return SHAPE;
     }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) {
+    protected RenderShape getRenderShape(BlockState blockState) {
         return RenderShape.MODEL;
-    }
-
-    @Override
-    public @Nullable BlockState getStateForPlacement(BlockPlaceContext ctx) {
-        return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
     }
 
     @Override
@@ -75,56 +99,6 @@ public class DisenchantingTableBlock extends BaseEntityBlock implements EntityBl
             }
             super.onRemove(state, world, pos, newState, moved);
         }
-    }
-
-    private void doServerInteraction(Level level, BlockPos pos, Player player) {
-
-        MenuProvider screenHandlerFactory = ((DisenchantingTableBlockEntity) level.getBlockEntity(pos));
-
-        if (screenHandlerFactory != null) {
-            player.openMenu(screenHandlerFactory);
-        }
-    }
-
-//    @Override
-//    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-//
-//        if (!level.isClientSide()) {
-//            this.doServerInteraction(level, pos, player);
-//        }
-//
-//        return InteractionResult.SUCCESS;
-//    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult blockHitResult) {
-        if (!level.isClientSide()) {
-            this.doServerInteraction(level, pos, player);
-        }
-
-        return InteractionResult.SUCCESS;
-    }
-
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack itemStack, BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand interactionHand, BlockHitResult blockHitResult) {
-        if (!level.isClientSide()) {
-            this.doServerInteraction(level, pos, player);
-        }
-
-        return ItemInteractionResult.SUCCESS;
-    }
-
-    @Override
-    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new DisenchantingTableBlockEntity(pos, state);
-    }
-
-    @Override
-    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
-        if (debug) {
-            System.out.println("CREATED TICKER FOR DISENCHANTING TABLE");
-        }
-        return createTickerHelper(type, DisenchantingTableFabric.DISENCHANTING_TABLE_BLOCK_ENTITY, (world1, pos, state1, blockEntity) -> blockEntity.tick(world1, pos, state1));
     }
 
     @Override
