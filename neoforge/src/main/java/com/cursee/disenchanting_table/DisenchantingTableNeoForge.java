@@ -43,7 +43,7 @@ public class DisenchantingTableNeoForge {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> DISENCHANTING_TABLE_CREATIVE_MODE_TAB;
 
     static {
-        DISENCHANTING_TABLE_BLOCK = registerBlockAndBlockItem("disenchanting_table", () -> new DisenchantingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE)));
+        DISENCHANTING_TABLE_BLOCK = registerBlockAndBlockItem("disenchanting_table", () -> new DisenchantingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ENCHANTING_TABLE).noOcclusion()));
         DISENCHANTING_TABLE_BLOCK_ENTITY = BLOCK_ENTITY.register("disenchanting_table_block_entity", () ->  BlockEntityType.Builder.of(DisenchantingTableBlockEntity::new, DISENCHANTING_TABLE_BLOCK.get()).build(null));
         DISENCHANTING_TABLE_MENU = registerMenuType(DisenchantingTableMenu::new, "disenchanting_table_menu");
 
