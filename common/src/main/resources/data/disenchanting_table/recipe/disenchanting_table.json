@@ -18,7 +18,7 @@
     "###"
   ],
   "result": {
-    "item": "disenchanting_table:disenchanting_table"
+    "id": "disenchanting_table:disenchanting_table"
   },
   "show_notification": true
 }
