@@ -13,8 +13,6 @@ minecraft {
 
 dependencies {
     compileOnly group:'org.spongepowered', name:'mixin', version:'0.8.5'
-
-    implementation files('_libs/monolib-common-1.21-1.3.0.jar')
 }
 
 configurations {
