@@ -65,6 +65,8 @@ public class DisenchantingTableNeoForge {
         DisenchantingTableNeoForge.registerAllDeferred(bus);
 
         bus.addListener(this::addCreative);
+
+        ConfigNeoForge.initialize();
     }
 
     private static void registerAllDeferred(IEventBus bus) {

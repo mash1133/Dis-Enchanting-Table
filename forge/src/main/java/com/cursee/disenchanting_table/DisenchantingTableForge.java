@@ -66,6 +66,8 @@ public class DisenchantingTableForge {
         DisenchantingTableForge.registerAllDeferred(bus);
 
         bus.addListener(this::addCreative);
+
+        ConfigForge.initialize();
     }
 
     @Mod.EventBusSubscriber(modid = Constants.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

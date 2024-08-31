@@ -1,6 +1,7 @@
 package com.cursee.disenchanting_table.core;
 
 import com.cursee.disenchanting_table.Constants;
+import com.cursee.disenchanting_table.DisenchantingTable;
 import com.cursee.disenchanting_table.DisenchantingTableNeoForge;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.core.BlockPos;
@@ -230,6 +231,10 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
     }
 
     private static boolean takeExperienceFromNearestPlayer(Level level, BlockPos pos) {
+
+        if (!DisenchantingTable.experienceIsRequired) {
+            return true;
+        }
 
         // TargetingConditions.forNonCombat() <-- this is important
         @Nullable ServerPlayer player = (ServerPlayer) level.getNearestPlayer(TargetingConditions.forNonCombat(), pos.getX(), pos.getY(), pos.getZ());

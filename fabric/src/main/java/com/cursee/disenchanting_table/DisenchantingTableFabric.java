@@ -53,6 +53,8 @@ public class DisenchantingTableFabric implements ModInitializer {
         Sailing.register(Constants.MOD_NAME, Constants.MOD_ID, Constants.MOD_VERSION, Constants.MC_VERSION_RAW, Constants.PUBLISHER_AUTHOR, Constants.PRIMARY_CURSEFORGE_MODRINTH);
 
         DisenchantingTableFabric.registerAll();
+
+        ConfigFabric.initialize();
     }
 
     private static Block registerBlock(String name, Block block) {
