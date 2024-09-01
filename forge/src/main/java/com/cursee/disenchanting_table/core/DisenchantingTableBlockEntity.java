@@ -1,5 +1,6 @@
 package com.cursee.disenchanting_table.core;
 
+import com.cursee.disenchanting_table.DisenchantingTable;
 import com.cursee.disenchanting_table.DisenchantingTableForge;
 import com.cursee.disenchanting_table.core.util.InventoryDirectionEntry;
 import com.cursee.disenchanting_table.core.util.InventoryDirectionWrapper;
@@ -104,6 +105,10 @@ public class DisenchantingTableBlockEntity extends BlockEntity implements MenuPr
     }
 
     private static boolean takeExperienceFromNearestPlayer(Level level, BlockPos pos) {
+
+        if (!DisenchantingTable.experienceIsRequired) {
+            return true;
+        }
 
         // TargetingConditions.forNonCombat() <-- this is important
         @Nullable ServerPlayer player = (ServerPlayer) level.getNearestPlayer(TargetingConditions.forNonCombat(), pos.getX(), pos.getY(), pos.getZ());

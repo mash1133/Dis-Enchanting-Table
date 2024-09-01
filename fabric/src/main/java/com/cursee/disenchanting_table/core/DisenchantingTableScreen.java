@@ -2,6 +2,7 @@ package com.cursee.disenchanting_table.core;
 
 
 import com.cursee.disenchanting_table.Constants;
+import com.cursee.disenchanting_table.DisenchantingTable;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -54,7 +55,7 @@ public class DisenchantingTableScreen extends AbstractContainerScreen<Disenchant
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         super.renderLabels(graphics, mouseX, mouseY);
 
-        if (this.minecraft != null && this.minecraft.player != null) {
+        if (this.minecraft != null && this.minecraft.player != null && DisenchantingTable.experienceIsRequired) {
 
             // Player player = this.minecraft.player;
 

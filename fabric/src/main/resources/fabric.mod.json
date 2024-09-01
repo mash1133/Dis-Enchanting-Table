@@ -29,7 +29,7 @@
     "depends": {
         "fabricloader": ">=0.14",
         "fabric": "*",
-        "minecraft": "${minecraft_version}",
+        "minecraft": "*",
         "java": ">=17",
         "monolib": ">=1.3.0"
     },
